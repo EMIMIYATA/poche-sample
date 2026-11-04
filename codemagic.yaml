@@ -1,0 +1,43 @@
+workflows:
+  ios-sample:
+    name: Poche サンプル（iOS）
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: Codemagic
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.example.pochesample
+      vars:
+        APP_ID: com.example.pochesample
+      node: 20
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: パッケージを入れる
+        script: npm install
+      - name: iOSの土台を作る
+        script: |
+          npx cap add ios
+          npx cap sync ios
+      - name: 署名の設定を反映する
+        script: |
+          cd ios/App
+          xcode-project use-profiles
+      - name: ビルド番号を自動で増やす
+        script: |
+          cd ios/App
+          agvtool new-version -all $BUILD_NUMBER
+      - name: ipaを作る
+        script: |
+          cd ios/App
+          xcode-project build-ipa --workspace "App.xcworkspace" --scheme "App"
+    artifacts:
+      - ios/App/build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+
